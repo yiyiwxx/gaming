@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const MatchSchema = z.object({
   id: z.string().min(1),
-  game: z.enum(["lol", "valorant"]),
+  game: z.enum(["lol", "valorant", "hok"]),
   gameName: z.string().min(1),
   league: z.string().min(1),
   tournament: z.string().min(1),
