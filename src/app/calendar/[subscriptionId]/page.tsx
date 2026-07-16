@@ -1,85 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 
 interface SubscriptionInfo {
-  id: string;
-  name?: string;
   games: string[];
   leagues: string[];
   teams: string[];
   reminderMinutes: number;
-  timezone: string;
 }
 
 export default function CalendarResultPage() {
   const params = useParams();
-  const subscriptionId = params?.subscriptionId as string;
+  const rawId = (params?.subscriptionId as string) || "";
 
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
+
+  // 从 URL 中解码订阅参数
+  const subscription = useMemo<SubscriptionInfo>(() => {
+    try {
+      // base64url → base64
+      const base64 = rawId.replace(/-/g, "+").replace(/_/g, "/");
+      const json = atob(base64);
+      const obj = JSON.parse(json);
+      return {
+        games: obj.g || [],
+        leagues: obj.l || [],
+        teams: obj.t || [],
+        reminderMinutes: obj.r ?? 60,
+      };
+    } catch {
+      return { games: [], leagues: [], teams: [], reminderMinutes: 60 };
+    }
+  }, [rawId]);
 
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const calendarUrl = `${appUrl}${basePath}/api/calendar/${subscriptionId}.ics`;
-
-  useEffect(() => {
-    if (!subscriptionId) return;
-
-    fetch(`/api/subscriptions?id=${subscriptionId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("订阅不存在");
-        return res.json();
-      })
-      .then((data) => {
-        setSubscription(data.subscription || data);
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  }, [subscriptionId]);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  // 生成完整的 ICS 链接
+  const calendarUrl = appUrl
+    ? `${appUrl}${basePath}/api/calendar/${rawId}.ics`
+    : `${basePath}/api/calendar/${rawId}.ics`;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(calendarUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const textArea = document.createElement("textarea");
       textArea.value = calendarUrl;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center text-gray-400">
-        加载中...
-      </div>
-    );
-  }
-
-  if (error || !subscription) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">订阅不存在</h1>
-        <p className="text-gray-400 mb-6">{error || "找不到该订阅，可能已被删除。"}</p>
-        <a href="/subscribe" className="btn-primary inline-block">
-          创建新订阅
-        </a>
-      </div>
-    );
-  }
 
   const reminderLabel =
     subscription.reminderMinutes >= 1440
@@ -87,6 +62,11 @@ export default function CalendarResultPage() {
       : subscription.reminderMinutes >= 60
         ? `赛前 ${subscription.reminderMinutes / 60} 小时`
         : `赛前 ${subscription.reminderMinutes} 分钟`;
+
+  const isEmpty =
+    subscription.games.length === 0 &&
+    subscription.leagues.length === 0 &&
+    subscription.teams.length === 0;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
@@ -97,16 +77,6 @@ export default function CalendarResultPage() {
       <div className="card mb-6">
         <h2 className="text-lg font-semibold mb-3">订阅规则</h2>
         <div className="space-y-2 text-sm">
-          {subscription.name && (
-            <div className="flex gap-2">
-              <span className="text-gray-500">名称：</span>
-              <span>{subscription.name}</span>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <span className="text-gray-500">时间：</span>
-            <span>{subscription.timezone}</span>
-          </div>
           <div className="flex gap-2">
             <span className="text-gray-500">提醒：</span>
             <span>{reminderLabel}</span>
@@ -114,7 +84,11 @@ export default function CalendarResultPage() {
           {subscription.games.length > 0 && (
             <div className="flex gap-2">
               <span className="text-gray-500">游戏：</span>
-              <span>{subscription.games.join(", ")}</span>
+              <span>
+                {subscription.games
+                  .map((g) => ({ lol: "英雄联盟", valorant: "无畏契约", hok: "王者荣耀" }[g] || g))
+                  .join(", ")}
+              </span>
             </div>
           )}
           {subscription.leagues.length > 0 && (
@@ -128,6 +102,9 @@ export default function CalendarResultPage() {
               <span className="text-gray-500">战队：</span>
               <span>{subscription.teams.join(", ")}</span>
             </div>
+          )}
+          {isEmpty && (
+            <div className="text-gray-500">未设置筛选条件，显示全部比赛。</div>
           )}
         </div>
       </div>

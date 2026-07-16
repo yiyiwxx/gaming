@@ -42,33 +42,41 @@ export default function SubscribePage() {
         .map((t) => t.trim())
         .filter(Boolean);
 
-      const body: Record<string, unknown> = {
+      // AI 自然语言模式：先调用 AI 解析
+      if (naturalLanguage.trim()) {
+        const aiRes = await fetch("/api/ai/parse-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: naturalLanguage.trim() }),
+        });
+
+        if (!aiRes.ok) throw new Error("AI 解析失败");
+
+        const aiResult = await aiRes.json();
+
+        // 合并 AI 结果和手动输入（手动输入优先级更高）
+        const encoded = encodeParams({
+          games: selectedGames.length > 0 ? selectedGames : aiResult.games || [],
+          leagues: selectedLeagues.length > 0 ? selectedLeagues : aiResult.leagues || [],
+          teams: teams.length > 0 ? teams : aiResult.teams || [],
+          reminderMinutes,
+        });
+
+        router.push(`/calendar/${encoded}`);
+        return;
+      }
+
+      // 纯手动模式
+      const encoded = encodeParams({
         games: selectedGames,
         leagues: selectedLeagues,
         teams,
         reminderMinutes,
-        timezone: "Asia/Shanghai",
-      };
-
-      if (naturalLanguage.trim()) {
-        body.naturalLanguageQuery = naturalLanguage.trim();
-      }
-
-      const res = await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "创建订阅失败");
-      }
-
-      const data = await res.json();
-      router.push(`/calendar/${data.subscription.id}`);
+      router.push(`/calendar/${encoded}`);
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || "生成失败，请重试");
     } finally {
       setLoading(false);
     }
@@ -192,4 +200,25 @@ export default function SubscribePage() {
       </form>
     </div>
   );
+}
+
+/**
+ * 将订阅参数编码为 URL 片段
+ */
+function encodeParams(params: {
+  games: string[];
+  leagues: string[];
+  teams: string[];
+  reminderMinutes: number;
+}): string {
+  // 动态 import 避免服务端依赖问题（base64url 编码）
+  const obj: Record<string, unknown> = {};
+  if (params.games.length) obj.g = params.games;
+  if (params.leagues.length) obj.l = params.leagues;
+  if (params.teams.length) obj.t = params.teams;
+  if (params.reminderMinutes !== 60) obj.r = params.reminderMinutes;
+
+  const json = JSON.stringify(obj);
+  // 浏览器端 base64url 编码
+  return btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
