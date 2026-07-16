@@ -1,112 +1,118 @@
-import ical, { ICalCalendarMethod, ICalEventStatus, ICalAlarmType } from "ical-generator";
-import { Match } from "../connectors/types";
-import { Subscription } from "../connectors/types";
+/**
+ * ICS 日历生成 - 手写格式确保 Outlook / Apple Calendar / Google Calendar 兼容
+ */
+import { Match, Subscription } from "../connectors/types";
 
 /**
  * 根据赛制估算比赛时长（分钟）
  */
 function estimateDuration(format?: string): number {
   switch (format?.toUpperCase()) {
-    case "BO1":
-      return 60;
-    case "BO3":
-      return 150;
-    case "BO5":
-      return 240;
-    default:
-      return 120;
+    case "BO1": return 60;
+    case "BO3": return 150;
+    case "BO5": return 240;
+    default: return 120;
   }
 }
 
-/**
- * 计算 endTime
- */
-function getEndTime(match: Match): string {
-  if (match.endTime) return match.endTime;
-  const durationMinutes = estimateDuration(match.format);
-  const start = new Date(match.startTime);
-  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-  return end.toISOString();
+/** 转 UTC 时间字符串 YYYYMMDDTHHMMSSZ */
+function toUTC(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
-/**
- * 生成稳定的 UID
- */
+/** 现在 UTC */
+function now(): string {
+  return toUTC(new Date());
+}
+
+/** 转义 ICS 文本（逗号、分号、反斜杠、换行） */
+function escapeText(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+/** 按 RFC 5545 折行（每行最多 75 字节） */
+function foldLine(line: string): string {
+  if (line.length <= 75) return line;
+  const result: string[] = [];
+  while (line.length > 75) {
+    result.push(line.slice(0, 75));
+    line = " " + line.slice(75);
+  }
+  result.push(line);
+  return result.join("\r\n");
+}
+
 function generateUID(match: Match): string {
   return `esports-cal-${match.id}@esports-calendar`;
 }
 
-/**
- * 为一批比赛生成 ICS 日历
- * 只包含当前及未来的比赛
- */
-export function generateICS(
-  matches: Match[],
-  subscription: Subscription
-): string {
-  const cal = ical({
-    name: subscription.name || "电竞赛事日历",
-    prodId: {
-      company: "esports-calendar",
-      product: "ai-esports-subscription",
-      language: "ZH",
-    },
-    description: "AI 电竞赛事日历订阅助手",
-    timezone: "UTC",
-    method: ICalCalendarMethod.PUBLISH,
-  });
+export function generateICS(matches: Match[], subscription: Subscription): string {
+  const lines: string[] = [];
+  const name = subscription.name || "电竞赛事日历";
 
-  // Outlook 兼容属性
-  cal.x([
-    { key: "X-WR-CALNAME", value: subscription.name || "电竞赛事日历" },
-    { key: "X-WR-TIMEZONE", value: "Asia/Shanghai" },
-    { key: "REFRESH-INTERVAL;VALUE=DURATION", value: "PT1H" },
-    { key: "X-PUBLISHED-TTL", value: "PT1H" },
-  ]);
+  // VCALENDAR header
+  lines.push("BEGIN:VCALENDAR");
+  lines.push("VERSION:2.0");
+  lines.push("PRODID:-//esports-calendar//ai-esports-subscription//ZH");
+  lines.push("CALSCALE:GREGORIAN");
+  lines.push("METHOD:PUBLISH");
+  lines.push(`X-WR-CALNAME:${escapeText(name)}`);
+  lines.push("X-WR-CALDESC:AI 电竞赛事日历订阅助手");
+  lines.push("X-WR-TIMEZONE:Asia/Shanghai");
+  lines.push("REFRESH-INTERVAL;VALUE=DURATION:PT1H");
+  lines.push("X-PUBLISHED-TTL:PT1H");
 
-  const now = new Date();
+  const nowDate = new Date();
+  let eventCount = 0;
 
   for (const match of matches) {
-    // 跳过过去的比赛
     const startTime = new Date(match.startTime);
-    if (startTime < now) continue;
+    if (startTime < nowDate) continue;
 
-    const endTime = new Date(getEndTime(match));
+    const endTime = match.endTime
+      ? new Date(match.endTime)
+      : new Date(startTime.getTime() + estimateDuration(match.format) * 60 * 1000);
 
-    const teamADisplay = match.teamA || "TBD";
-    const teamBDisplay = match.teamB || "TBD";
-
-    const summary = `[${match.gameName}] ${teamADisplay} vs ${teamBDisplay}`;
-    const description = [
+    const teamA = match.teamA || "TBD";
+    const teamB = match.teamB || "TBD";
+    const summary = `[${match.gameName}] ${teamA} vs ${teamB}`;
+    const parts = [
       `赛事：${match.tournament}`,
       match.stage ? `阶段：${match.stage}` : "",
-      `对阵：${teamADisplay} vs ${teamBDisplay}`,
+      `对阵：${teamA} vs ${teamB}`,
       match.format ? `赛制：${match.format}` : "",
-      match.summary ? `\n${match.summary}` : "",
-      match.streamUrl ? `\n直播：${match.streamUrl}` : "",
-      match.sourceUrl ? `\n详情：${match.sourceUrl}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+      match.summary || "",
+    ].filter(Boolean);
+    const description = parts.join(" | ");
 
-    const event = cal.createEvent({
-      id: generateUID(match),
-      start: startTime,
-      end: endTime,
-      summary,
-      description,
-      status: ICalEventStatus.CONFIRMED,
-      url: match.sourceUrl,
-    });
-
-    // 添加提醒
-    if (subscription.reminderMinutes && subscription.reminderMinutes > 0) {
-      event.createAlarm({
-        type: ICalAlarmType.display,
-        triggerBefore: subscription.reminderMinutes * 60,
-      });
+    lines.push("BEGIN:VEVENT");
+    lines.push(`UID:${generateUID(match)}`);
+    lines.push(`DTSTAMP:${now()}`);
+    lines.push(`DTSTART:${toUTC(startTime)}`);
+    lines.push(`DTEND:${toUTC(endTime)}`);
+    lines.push(`SUMMARY:${escapeText(summary)}`);
+    lines.push(`DESCRIPTION:${escapeText(description)}`);
+    if (match.sourceUrl) {
+      lines.push(`URL:${escapeText(match.sourceUrl)}`);
     }
+    lines.push("STATUS:CONFIRMED");
+
+    // 提醒
+    if (subscription.reminderMinutes && subscription.reminderMinutes > 0) {
+      const triggerMin = -subscription.reminderMinutes;
+      lines.push("BEGIN:VALARM");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeText(summary)}`);
+      lines.push(`TRIGGER:${triggerMin < 0 ? "-" : ""}PT${Math.abs(triggerMin)}M`);
+      lines.push("END:VALARM");
+    }
+
+    lines.push("END:VEVENT");
+    eventCount++;
   }
 
-  return cal.toString();
+  lines.push("END:VCALENDAR");
+
+  // 折行处理
+  return lines.map(foldLine).join("\r\n") + "\r\n";
 }
