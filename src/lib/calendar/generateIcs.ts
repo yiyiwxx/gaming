@@ -30,16 +30,20 @@ function escapeText(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
-/** 按 RFC 5545 折行（每行最多 75 字节） */
+/** 按 RFC 5545 折行（每行最多 75 字节，续行前加一个空格） */
 function foldLine(line: string): string {
   if (line.length <= 75) return line;
-  const result: string[] = [];
-  while (line.length > 75) {
-    result.push(line.slice(0, 75));
-    line = " " + line.slice(75);
+  const parts: string[] = [];
+  let remaining = line;
+  while (remaining.length > 75) {
+    parts.push(remaining.slice(0, 75));
+    remaining = remaining.slice(75);
   }
-  result.push(line);
-  return result.join("\r\n");
+  if (remaining.length > 0) {
+    parts.push(remaining);
+  }
+  // 第一行之后每行前面加一个空格（RFC 5545 续行标记）
+  return parts.map((p, i) => (i === 0 ? p : " " + p)).join("\r\n");
 }
 
 function generateUID(match: Match): string {
