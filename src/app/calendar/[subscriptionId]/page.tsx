@@ -34,12 +34,9 @@ export default function CalendarResultPage() {
     }
   }, [rawId]);
 
-  // 生成完整的 ICS 链接（优先用环境变量，否则用当前页面域名）
+  // 生成完整的 ICS 链接（自动用当前页面域名）
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
   const calendarUrl = useMemo(() => {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-    if (appUrl) return `${appUrl}${basePath}/api/calendar/${rawId}.ics`;
-    // 浏览器端自动检测当前域名
     if (typeof window !== "undefined") {
       return `${window.location.origin}${basePath}/api/calendar/${rawId}.ics`;
     }
