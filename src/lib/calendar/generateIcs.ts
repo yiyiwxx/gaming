@@ -51,14 +51,18 @@ export function generateICS(
       product: "ai-esports-subscription",
       language: "ZH",
     },
-    description: `电竞赛事订阅 - 由 esports-calendar 生成`,
+    description: "AI 电竞赛事日历订阅助手",
     timezone: "UTC",
     method: ICalCalendarMethod.PUBLISH,
   });
 
-  // 添加 X-WR-CALNAME（Outlook 兼容）
-  cal.x([{ key: "X-WR-CALNAME", value: subscription.name || "电竞赛事日历" }]);
-  cal.x([{ key: "X-WR-CALDESC", value: "AI 电竞赛事日历订阅助手" }]);
+  // Outlook 兼容属性
+  cal.x([
+    { key: "X-WR-CALNAME", value: subscription.name || "电竞赛事日历" },
+    { key: "X-WR-TIMEZONE", value: "Asia/Shanghai" },
+    { key: "REFRESH-INTERVAL;VALUE=DURATION", value: "PT1H" },
+    { key: "X-PUBLISHED-TTL", value: "PT1H" },
+  ]);
 
   const now = new Date();
 
