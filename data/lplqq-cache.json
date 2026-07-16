@@ -1,0 +1,40 @@
+{
+  "scrapedAt": "2026-07-13T00:00:00Z",
+  "count": 2,
+  "matches": [
+    {
+      "id": "lplqq-2026-06-28-t1-tlaw",
+      "game": "lol",
+      "gameName": "英雄联盟",
+      "league": "MSI 2026",
+      "tournament": "MSI 2026",
+      "stage": "入围赛 第一天",
+      "teamA": "T1",
+      "teamB": "TLAW",
+      "startTime": "2026-06-28T03:00:00.000Z",
+      "format": "BO5",
+      "status": "finished",
+      "source": "lplqq",
+      "sourceUrl": "https://lpl.qq.com/web202301/event.html?tabId=schedule",
+      "summary": "T1 3-0 TLAW",
+      "lastSyncedAt": "2026-07-13T00:00:00Z"
+    },
+    {
+      "id": "lplqq-2026-06-28-kc-dcg",
+      "game": "lol",
+      "gameName": "英雄联盟",
+      "league": "MSI 2026",
+      "tournament": "MSI 2026",
+      "stage": "入围赛 第一天",
+      "teamA": "KC",
+      "teamB": "DCG",
+      "startTime": "2026-06-28T08:00:00.000Z",
+      "format": "BO5",
+      "status": "finished",
+      "source": "lplqq",
+      "sourceUrl": "https://lpl.qq.com/web202301/event.html?tabId=schedule",
+      "summary": "KC 3-0 DCG",
+      "lastSyncedAt": "2026-07-13T00:00:00Z"
+    }
+  ]
+}

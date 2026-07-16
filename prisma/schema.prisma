@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Match {
+  id           String   @id
+  game         String
+  gameName     String
+  league       String
+  tournament   String
+  stage        String?
+  teamA        String
+  teamB        String
+  startTime    String
+  endTime      String?
+  format       String?
+  status       String   @default("scheduled")
+  source       String
+  sourceUrl    String?
+  streamUrl    String?
+  summary      String?
+  lastSyncedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([game])
+  @@index([league])
+  @@index([startTime])
+  @@index([status])
+}
+
+model Subscription {
+  id               String   @id
+  name             String?
+  games            String   @default("[]")
+  leagues          String   @default("[]")
+  teams            String   @default("[]")
+  timezone         String   @default("Asia/Shanghai")
+  reminderMinutes  Int      @default(60)
+  includeKeywords  String   @default("[]")
+  excludeKeywords  String   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SyncLog {
+  id        String   @id
+  source    String
+  status    String
+  count     Int      @default(0)
+  error     String?
+  createdAt DateTime @default(now())
+}
