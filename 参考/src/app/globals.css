@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07100d;
+  --foreground: #f6fff9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, sans-serif;
+}
+
+::selection {
+  background: #f5ff5c;
+  color: #11140f;
+}
+
+.arena-grid {
+  background-image:
+    linear-gradient(rgba(245, 255, 92, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 255, 92, 0.09) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}

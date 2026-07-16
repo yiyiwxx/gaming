@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Esports calendar control surface">
+  <rect width="1200" height="900" fill="#07100d"/>
+  <path d="M0 120h1200M0 240h1200M0 360h1200M0 480h1200M0 600h1200M0 720h1200M150 0v900M300 0v900M450 0v900M600 0v900M750 0v900M900 0v900M1050 0v900" stroke="#f5ff5c" stroke-opacity=".11" stroke-width="2"/>
+  <circle cx="930" cy="170" r="118" fill="#f5ff5c" fill-opacity=".12"/>
+  <circle cx="930" cy="170" r="58" fill="#f5ff5c" fill-opacity=".32"/>
+  <path d="M170 230h420v96H170zM170 366h620v96H170zM170 502h480v96H170z" fill="#0e1b17" stroke="#d8f6e8" stroke-opacity=".16"/>
+  <path d="M210 278h118M360 278h174M210 414h210M458 414h238M210 550h144M386 550h210" stroke="#f5ff5c" stroke-width="14" stroke-linecap="round"/>
+  <path d="M835 370l118-68 118 68v136l-118 68-118-68z" fill="#10221d" stroke="#f5ff5c" stroke-opacity=".72" stroke-width="8"/>
+  <path d="M905 420h96M905 468h96" stroke="#d8f6e8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M0 820c190-72 340-88 510-38 183 53 359 56 690-55v173H0z" fill="#f5ff5c" fill-opacity=".08"/>
+</svg>

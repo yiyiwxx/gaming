@@ -46,10 +46,19 @@ export function generateICS(
 ): string {
   const cal = ical({
     name: subscription.name || "电竞赛事日历",
+    prodId: {
+      company: "esports-calendar",
+      product: "ai-esports-subscription",
+      language: "ZH",
+    },
     description: `电竞赛事订阅 - 由 esports-calendar 生成`,
     timezone: "UTC",
     method: ICalCalendarMethod.PUBLISH,
   });
+
+  // 添加 X-WR-CALNAME（Outlook 兼容）
+  cal.x([{ key: "X-WR-CALNAME", value: subscription.name || "电竞赛事日历" }]);
+  cal.x([{ key: "X-WR-CALDESC", value: "AI 电竞赛事日历订阅助手" }]);
 
   const now = new Date();
 

@@ -50,7 +50,7 @@ export async function GET(
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
         "Content-Disposition": `inline; filename="esports-calendar.ics"`,
-        "Cache-Control": "public, max-age=300, s-maxage=600",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (error) {

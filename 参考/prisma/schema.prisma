@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Match {
+  id           String   @id
+  game         String
+  gameName     String   @map("game_name")
+  league       String
+  tournament   String
+  stage        String?
+  teamA        String   @map("team_a")
+  teamB        String   @map("team_b")
+  startTime    DateTime @map("start_time")
+  endTime      DateTime? @map("end_time")
+  format       String?
+  status       String
+  source       String
+  sourceUrl    String?  @map("source_url")
+  streamUrl    String?  @map("stream_url")
+  summary      String?
+  hash         String
+  lastSyncedAt DateTime @map("last_synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([game])
+  @@index([league])
+  @@index([startTime])
+  @@map("matches")
+}
+
+model Subscription {
+  id              String   @id
+  name            String
+  games           String
+  leagues         String
+  teams           String
+  timezone        String
+  reminderMinutes Int      @map("reminder_minutes")
+  includeKeywords String   @map("include_keywords")
+  excludeKeywords String   @map("exclude_keywords")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+model SyncLog {
+  id          String   @id @default(cuid())
+  source      String
+  status      String
+  message     String?
+  syncedCount Int      @map("synced_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sync_logs")
+}
