@@ -65,6 +65,9 @@ export function parseLplqqEventHtml(text: string): Match[] {
     // TeamB
     const teamB = li < lines.length ? lines[li] : "";
     li++;
+    // ScoreB
+    const scoreB = li < lines.length ? lines[li] : "";
+    li++;
     // Tournament/Stage (e.g., "2026季中冠军赛 入围赛 第一天")
     const tournamentLine = li < lines.length ? lines[li] : "";
     li++;
